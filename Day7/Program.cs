@@ -1,51 +1,65 @@
-﻿// See https://aka.ms/new-console-template for more information
+﻿string[] testsStr = File.ReadAllLines(@"E:\AdventOfCode\AdventOfCode2024\Day7\input.txt");
 
-string[] testsStr = File.ReadAllLines(@"E:\AdventOfCode\AdventOfCode2024\Day7\input.txt");
+List<Operation> operations = new List<Operation> { Operation.Add, Operation.Multiply, Operation.ConCat };
+ulong totalCalibrationResult = 0;
 
-List<Operation> operations = new List<Operation> { Operation.Add, Operation.Multiply };
-int sum = 0;
-HashSet<long> results = new HashSet<long>();
+//146111650210682
 
 for (int i = 0; i < testsStr.Length; i++)
 {
     var test = testsStr[i].Split(':');
-    var testResult = long.Parse(test[0]);
-    List<long> testValues = test[1].Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(long.Parse).ToList();
+    ulong testResult = ulong.Parse(test[0].Trim());
+    List<ulong> testValues = test[1].Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(ulong.Parse).ToList();
 
-    CalculateAllOptions(testValues, testResult, 1, testValues[0]);
+    if (CalculateAllOptions(testValues, testResult, 1, testValues[0]))
+    {
+        totalCalibrationResult += testResult;
+    }
 }
 
-Console.WriteLine(results.Sum());
+Console.WriteLine($"Total Result: {totalCalibrationResult}");
 
-void CalculateAllOptions(List<long> numbers, long testResult, int index, long currentResult)
+
+bool CalculateAllOptions(List<ulong> numbers, ulong testResult, int index, ulong currentResult)
 {
     if (index == numbers.Count)
     {
-        if (currentResult == testResult)
-        {
-            results.Add(currentResult);
-        }
-
-        return;
+        return currentResult == testResult;
     }
+
+    ulong nextNumber = numbers[index];
 
     foreach (var op in operations)
     {
-        long nextResult = currentResult;
-
-        if (op == Operation.Add)
+        try
         {
-            nextResult += numbers[index];
+            ulong nextResult = currentResult;
+
+            switch (op)
+            {
+                case Operation.Add:
+                    nextResult += nextNumber;
+                    break;
+                case Operation.Multiply:
+                    nextResult *= nextNumber;
+                    break;
+                case Operation.ConCat:
+                    nextResult = ulong.Parse(string.Concat(nextResult.ToString(), nextNumber));
+                    break;
+            }
+
+            if (CalculateAllOptions(numbers, testResult, index + 1, nextResult))
+            {
+                return true;
+            }
         }
-        else if (op == Operation.Multiply)
+        catch (OverflowException ex)
         {
-            nextResult *= numbers[index];
+            Console.WriteLine($"OverflowException: {currentResult} {op} {nextNumber} - {ex.Message}");
         }
-
-
-
-        CalculateAllOptions(numbers, testResult, index + 1, nextResult);
     }
+
+    return false;
 }
 
 enum Operation
